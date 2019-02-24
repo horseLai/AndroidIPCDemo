@@ -1,12 +1,10 @@
 package com.project.horselai.bindprogressguarddemo;
 
 import android.content.ComponentName;
-import android.content.ContentProvider;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
@@ -20,12 +18,9 @@ import android.widget.Toast;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -123,6 +118,7 @@ public class MainActivity extends AppCompatActivity {
         }
         try {
             mRemoteStub.sendMessage("clicked from Main");
+            mRemoteStub.sendMessageObj(new MyMessage(12, "kjergjkergjker"));
             textView.setText(String.format("process id: %s", mRemoteStub.getProcessId()));
         } catch (RemoteException e) {
             e.printStackTrace();
@@ -174,7 +170,7 @@ public class MainActivity extends AppCompatActivity {
     Handler mHandler = new Handler(Looper.getMainLooper(), new Handler.Callback() {
         @Override
         public boolean handleMessage(Message msg) {
-            if (msg.what == 2){
+            if (msg.what == 2) {
                 Toast.makeText(MainActivity.this, "" + msg.obj, Toast.LENGTH_SHORT).show();
                 return true;
             }
@@ -202,7 +198,8 @@ public class MainActivity extends AppCompatActivity {
 
         void sendMessage(String msg) {
             if (bos == null || client == null || client.isClosed() || !client.isConnected()) {
-                throw new IllegalStateException("socket client is not available..");
+//                throw new IllegalStateException("socket client is not available..");
+                return;
             }
             try {
                 bos.write(msg.getBytes());
@@ -231,13 +228,15 @@ public class MainActivity extends AppCompatActivity {
                     BufferedInputStream bis = new BufferedInputStream(client.getInputStream());
             ) {
                 int read = 0;
+                byte[] bytes = new byte[256];
                 while (mLoop) {
 
                     if (bis.available() <= 0) {
                         Thread.sleep(500L);
                         continue;
                     }
-                    byte[] bytes = new byte[bis.available()];
+                    if (bytes.length < bis.available())
+                        bytes = new byte[bis.available()];
                     read = bis.read(bytes, 0, bis.available());
 
                     String result = new String(bytes, 0, read);

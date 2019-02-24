@@ -11,16 +11,11 @@ import android.util.Log;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketAddress;
-import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -36,20 +31,23 @@ public class RemoteService extends Service {
         }
 
         @Override
+        public void sendMessageObj(MyMessage msg) throws RemoteException {
+            Log.i(TAG, "sendMessageObj: " + msg);
+        }
+
+        @Override
         public int getProcessId() throws RemoteException {
             return Process.myPid();
         }
 
         @Override
         public void registerCallback(IMyAidlInterfaceCallback callback) {
-//            if (callback == null) return;
             Log.i(TAG, "registerCallback: ");
             mRemoteCallbackList.register(callback);
         }
 
         @Override
         public void unregisterCallback(IMyAidlInterfaceCallback callback) throws RemoteException {
-//            if (callback == null) return;
             Log.i(TAG, "unregisterCallback: ");
             mRemoteCallbackList.unregister(callback);
         }
@@ -153,7 +151,6 @@ public class RemoteService extends Service {
 
 
     class ClientHandler implements Runnable {
-
         Socket client;
 
         public ClientHandler(Socket client) {
@@ -166,14 +163,15 @@ public class RemoteService extends Service {
                     BufferedInputStream bis = new BufferedInputStream(client.getInputStream());
                     BufferedOutputStream bos = new BufferedOutputStream(client.getOutputStream());
             ) {
-//                byte[] bytes = new byte[256];
+                byte[] bytes = new byte[256];
                 int read = 0;
                 while (mLoop) {
                     if (bis.available() <= 0) {
                         Thread.sleep(500L);
                         continue;
                     }
-                    byte[] bytes = new byte[bis.available()];
+                    if (bytes.length < bis.available())
+                        bytes = new byte[bis.available()];
                     read = bis.read(bytes, 0, bis.available());
                     String result = new String(bytes, 0, read);
                     Log.i(TAG, "server received: " + result);
