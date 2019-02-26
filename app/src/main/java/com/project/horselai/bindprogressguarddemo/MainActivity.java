@@ -8,6 +8,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
+import android.os.Messenger;
 import android.os.RemoteException;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -29,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private TextView textView;
     private Button btnBindRemote;
+    private Messenger mClientMessenger;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +39,8 @@ public class MainActivity extends AppCompatActivity {
         textView = findViewById(R.id.textView);
         btnBindRemote = findViewById(R.id.btnBindRemote);
 
+
+        mClientMessenger = new Messenger(mHandler);
     }
 
 
@@ -97,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onServiceDisconnected(ComponentName name) {
             Log.i(TAG, "onServiceDisconnected 2: ");
-            if (mRemoteStub != null) {
+            if (mRemoteStub2 != null) {
                 try {
                     mRemoteStub2.sendMessage("onServiceDisconnected 2 from Main");
                     mRemoteStub2.unregisterCallback(myAidlInterfaceCallback2);
@@ -105,6 +109,27 @@ public class MainActivity extends AppCompatActivity {
                     e.printStackTrace();
                 }
             }
+            mIsBond = false;
+            btnBindRemote.setEnabled(true);
+        }
+    };
+
+    // for Messenger
+    private Messenger mServiceMessenger;
+    ServiceConnection mServiceConnection3 = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            Log.i(TAG, "onServiceConnected3: ");
+            mServiceMessenger = new Messenger(service);
+
+            btnBindRemote.setEnabled(false);
+            mIsBond = true;
+            Toast.makeText(MainActivity.this, "service bond 3!", Toast.LENGTH_SHORT).show();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            Log.i(TAG, "onServiceDisconnected 3: ");
             mIsBond = false;
             btnBindRemote.setEnabled(true);
         }
@@ -124,6 +149,20 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
+        if (mServiceMessenger != null){
+            Message message = new Message();
+            Bundle bundle = new Bundle();
+            message.replyTo = mClientMessenger;
+            bundle.putString("msg","message  clicked from Main ..");
+            message.what = 122;
+            message.setData(bundle);
+            try {
+                mServiceMessenger.send( message);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+
         mExecutorService.execute(new Runnable() {
             @Override
             public void run() {
@@ -137,6 +176,8 @@ public class MainActivity extends AppCompatActivity {
         bindService(intent, mServiceConnection, BIND_AUTO_CREATE);
         bindService(intent, mServiceConnection2, BIND_AUTO_CREATE);
 
+        intent = new Intent(this, MessengerRemoteService.class);
+        bindService(intent, mServiceConnection3, BIND_AUTO_CREATE);
     }
 
     public void unbindRemoteService(View view) {
@@ -167,11 +208,17 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+
     Handler mHandler = new Handler(Looper.getMainLooper(), new Handler.Callback() {
         @Override
         public boolean handleMessage(Message msg) {
             if (msg.what == 2) {
                 Toast.makeText(MainActivity.this, "" + msg.obj, Toast.LENGTH_SHORT).show();
+                return true;
+            }else if (msg.what == 124){
+                Toast.makeText(MainActivity.this,   msg.getData().getString("msg"), Toast.LENGTH_SHORT).show();
+                Log.i(TAG, "handleMessage: " + msg.getData().getString("msg"));
+                Log.i(TAG, "handleMessage: ");
                 return true;
             }
             textView.setText(String.valueOf(msg.obj));

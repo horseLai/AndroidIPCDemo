@@ -3,7 +3,10 @@ package com.project.horselai.bindprogressguarddemo;
 import android.app.Service;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
 import android.os.Process;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
@@ -115,7 +118,9 @@ public class RemoteService extends Service {
             }
         });
 
+
     }
+
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {

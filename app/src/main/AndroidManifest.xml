@@ -22,7 +22,9 @@
         </activity>
 
         <service android:name=".RemoteService"
-            android:process=":remote"/>
+            android:process=":remote1"/>
+        <service android:name=".MessengerRemoteService"
+            android:process=":remote2"/>
     </application>
 
 </manifest>
