@@ -41,6 +41,7 @@ public class MessengerRemoteService extends Service {
                 Log.i(TAG, "handleMessage data: " + msg.getData().get("msg"));
 
                 Message message = Message.obtain();
+                message.replyTo = mMessenger;
                 Bundle bundle = new Bundle();
                 bundle.putString("msg", "MSG from MessengerRemoteService..");
                 message.setData(bundle);
